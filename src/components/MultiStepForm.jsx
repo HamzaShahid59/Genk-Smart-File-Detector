@@ -39,11 +39,64 @@ const theme = createTheme({
 const steps = [
     'Toestemming',
     'Aard van de aanvraag',
-    'Identification',
-    'Partnership or sole proprietorship',
-    'Attachments',
-    'Overview and Shipping',
+    'Identificatie',
+    'Vennootschap of éénmanszaak',
+    'Bijlagen',
+    'Overzicht en verzending',
 ];
+const FileUpload = ({ label, name, acceptedFileType, file, onFileChange, error }) => {
+    const handleFileSelect = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile && selectedFile.type !== 'application/pdf') {
+            onFileChange(name, { error: true });
+        } else {
+            onFileChange(name, selectedFile);
+        }
+    };
+
+    return (
+        <label htmlFor={name}>
+            <input
+                accept={acceptedFileType}
+                style={{ display: 'none' }}
+                id={name}
+                type="file"
+                onChange={handleFileSelect}
+            />
+            <Button
+                component="span"
+                variant="outlined"
+                sx={{
+                    p: 2,
+                    border: '2px dashed',
+                    borderColor: error ? '#ff0000' : '#00515D',
+                    width: '100%',
+                    height: 100,
+                    '&:hover': {
+                        borderColor: '#003941',
+                        backgroundColor: 'rgba(0, 81, 93, 0.04)'
+                    }
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" 
+                         style={{ color: error ? '#ff0000' : '#00515D' }}>
+                        <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor" />
+                    </svg>
+                    <Typography variant="body1" sx={{ color: error ? '#ff0000' : '#00515D' }}>
+                        {file?.name || `Upload ${label}`}
+                    </Typography>
+                    {file && !file.error && (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" 
+                             style={{ color: '#00C853', marginLeft: 8 }}>
+                            <path d="M21 7L9 19L3.5 13.5L4.91 12.09L9 16.17L19.59 5.59L21 7Z" fill="currentColor" />
+                        </svg>
+                    )}
+                </Box>
+            </Button>
+        </label>
+    );
+};
 
 function getStepContent(step, subStep, formData, handleChange, handleFileChange) {
     switch (step) {
@@ -256,7 +309,7 @@ function getStepContent(step, subStep, formData, handleChange, handleFileChange)
                                         onChange={(e) => handleChange('phone', e.target.value)}
                                     />
                                 </Grid>
-                                <Grid item  size={{ xs: 12}}>
+                                <Grid item size={{ xs: 12 }}>
                                     <FormControl component="fieldset" required fullWidth>
                                         <FormLabel component="legend">
                                             Is de uitbater al dan niet de eigenaar van het exploitatiepand?
@@ -325,7 +378,241 @@ function getStepContent(step, subStep, formData, handleChange, handleFileChange)
                     </Container>
                 );
             }
+        case 3:
+            return (
+                <Container maxWidth="lg">
+                    <Box sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: 2, mt: 2 }}>
+                        <Typography variant="h6" gutterBottom fontWeight="bold">
+                            Vennootschap of éénmanszaak
+                        </Typography>
 
+                        <FormControl component="fieldset" required fullWidth sx={{ mb: 4 }}>
+                            <FormLabel component="legend">Duid aan wat van toepassing is.</FormLabel>
+                            <RadioGroup
+                                row
+                                value={formData.businessStructure || ''}
+                                onChange={(e) => handleChange('businessStructure', e.target.value)}
+                            >
+                                <FormControlLabel
+                                    value="sole"
+                                    control={<Radio />}
+                                    label="Het gaat om een éénmanszaak"
+                                />
+                                {/* <FormControlLabel
+                                    value="single-manager"
+                                    control={<Radio />}
+                                    label="Het gaat om een vennootschap en er is maar 1 zaakvoerder"
+                                /> */}
+                                <FormControlLabel
+                                    value="multiple-managers"
+                                    control={<Radio />}
+                                    label="Het gaat om een vennootschap en er zijn zaakvoerders"
+                                />
+                            </RadioGroup>
+                        </FormControl>
+
+                        <Typography variant="h6" gutterBottom fontWeight="bold">
+                            Gegevens vennootschap
+                        </Typography>
+                        <Typography variant="body1" mb={2}>
+                            Vul hier de gegevens aan van de maatschappelijke zetel
+                        </Typography>
+
+                        <Grid container spacing={2}>
+                            {[
+                                ['Ondernemingsnummer', 'companyNumber'],
+                                ['Naam vennootschap', 'companyName'],
+                                ['Straat maatschappelijke zetel', 'companyStreet'],
+                                ['Huisnummer maatschappelijke zetel', 'companyHouseNumber'],
+                                ['Postcode maatschappelijke zetel', 'companyPostalCode'],
+                                ['Gemeente maatschappelijke zetel', 'companyCity'],
+                            ].map(([label, name]) => (
+                                <Grid item size={{xs:12 , md : 6}} key={name}>
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        label={label}
+                                        value={formData[name] || ''}
+                                        onChange={(e) => handleChange(name, e.target.value)}
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
+
+                        {['single-manager', 'multiple-managers'].includes(formData.businessStructure) && (
+                            <Box mt={4}>
+                                <Typography variant="h6" gutterBottom fontWeight="bold">
+                                    {formData.businessStructure === 'single-manager'
+                                        ? 'Gegevens zaakvoerder'
+                                        : 'Gegevens zaakvoerders'}
+                                </Typography>
+                                <Typography variant="body1" mb={2}>
+                                    {formData.businessStructure === 'single-manager'
+                                        ? 'Vul hier de gegevens aan van de zaakvoerder.'
+                                        : 'Vul hier de gegevens aan van de zaakvoerders.'}
+                                </Typography>
+
+                                {(formData.managers || []).map((manager, index) => (
+                                    <Box key={index} sx={{ mb: 4, border: '1px solid #e0e0e0', borderRadius: 2, p: 2 }}>
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            Zaakvoerder {index + 1}
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            {[
+                                                ['Voornaam', 'firstName'],
+                                                ['Achternaam', 'lastName'],
+                                                ['Straatnaam', 'street'],
+                                                ['Huisnummer', 'houseNumber'],
+                                                ['Postcode', 'postalCode'],
+                                                ['Gemeente', 'city'],
+                                                ['Land', 'country'],
+                                            ].map(([label, field]) => (
+                                                <Grid item size={{xs:12 , md : 6}} key={field}>
+                                                    <TextField
+                                                        required
+                                                        fullWidth
+                                                        label={label}
+                                                        value={manager[field] || ''}
+                                                        onChange={(e) => {
+                                                            const updatedManagers = [...(formData.managers || [])];
+                                                            updatedManagers[index] = {
+                                                                ...updatedManagers[index],
+                                                                [field]: e.target.value
+                                                            };
+                                                            handleChange('managers', updatedManagers);
+                                                        }}
+                                                    />
+                                                </Grid>
+                                            ))}
+                                            <Grid item size={{xs:12 , md : 6}}>
+                                                <TextField
+                                                    required
+                                                    fullWidth
+                                                    label="Geboortedatum"
+                                                    type="date"
+                                                    InputLabelProps={{ shrink: true }}
+                                                    value={manager.birthDate || ''}
+                                                    onChange={(e) => {
+                                                        const updatedManagers = [...(formData.managers || [])];
+                                                        updatedManagers[index] = {
+                                                            ...updatedManagers[index],
+                                                            birthDate: e.target.value
+                                                        };
+                                                        handleChange('managers', updatedManagers);
+                                                    }}
+                                                />
+                                            </Grid>
+                                        </Grid>
+
+                                        {formData.businessStructure === 'multiple-managers' && index !== 0 && (
+                                            <Button
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={() => {
+                                                    const updatedManagers = formData.managers.filter((_, i) => i !== index);
+                                                    handleChange('managers', updatedManagers);
+                                                }}
+                                                sx={{ mt: 2 }}
+                                            >
+                                                Verwijderen
+                                            </Button>
+                                        )}
+                                    </Box>
+                                ))}
+
+                                {formData.businessStructure === 'multiple-managers' && (
+                                    <Button
+                                        variant="contained"
+                                        onClick={() => {
+                                            const newManager = {
+                                                firstName: '',
+                                                lastName: '',
+                                                street: '',
+                                                houseNumber: '',
+                                                postalCode: '',
+                                                city: '',
+                                                birthDate: '',
+                                                country: ''
+                                            };
+                                            handleChange('managers', [...(formData.managers || []), newManager]);
+                                        }}
+                                        sx={{ mt: 2, bgcolor: '#00515D', '&:hover': { bgcolor: '#003941' } }}
+                                    >
+                                        Zaakvoerder toevoegen
+                                    </Button>
+                                )}
+                            </Box>
+                        )}
+                    </Box>
+                </Container>
+            );
+            case 4:
+                return (
+                    <Container maxWidth="lg">
+                        <Box sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: 2, mt: 2 }}>
+                            <Typography variant="h6" gutterBottom fontWeight="bold">
+                                Document(en) selecteren
+                            </Typography>
+            
+                            {[
+                                {
+                                    label: 'Bijlage Identiteitskaart',
+                                    name: 'idCard',
+                                    english: 'IDCardAttachment'
+                                },
+                                {
+                                    label: 'Uittreksel KBO',
+                                    name: 'kboExtract',
+                                    english: 'KBORegisterExtract'
+                                },
+                                {
+                                    label: 'Vennootschap: publicatie(s) Belgisch Staatsblad',
+                                    name: 'officialJournal',
+                                    english: 'OfficialGazettePublication'
+                                },
+                                {
+                                    label: 'Moraliteitsattest',
+                                    name: 'moralityCertificate',
+                                    english: 'MoralityCertificate'
+                                },
+                                {
+                                    label: 'Kopie verzekering Objectieve Aansprakelijkheid',
+                                    name: 'liabilityInsurance',
+                                    english: 'LiabilityInsuranceCopy'
+                                },
+                                {
+                                    label: 'Handelshuurovereenkomst (Indien je geen eigenaar bent)',
+                                    name: 'leaseAgreement',
+                                    english: 'CommercialLeaseAgreement'
+                                },
+                                {
+                                    label: 'Elektriciteitscertificaat',
+                                    name: 'electricCertificate',
+                                    english: 'ElectricCertificate'
+                                },
+                            ].map((doc) => (
+                                <Box key={doc.name} sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle1" gutterBottom>
+                                        {doc.label} <span style={{ color: '#ff0000' }}>*</span>
+                                    </Typography>
+                                    <FileUpload 
+                                        label={doc.label}
+                                        name={doc.english}
+                                        acceptedFileType="application/pdf"
+                                        file={formData[doc.english]}
+                                        onFileChange={handleFileChange}
+                                        error={!!formData[doc.english]?.error}
+                                    />
+                                    {formData[doc.english]?.error && (
+                                        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                                            Alleen PDF-bestanden zijn toegestaan
+                                        </Typography>
+                                    )}
+                                </Box>
+                            ))}
+                        </Box>
+                    </Container>
+                );
         default:
             return null;
     }
@@ -349,7 +636,44 @@ export default function MultiStepForm() {
             } else {
                 setActiveStep((prev) => prev + 1);
             }
-        } else {
+        }
+        else if(activeStep === 5){
+            const formPayload = new FormData();
+            
+            // Append all form data
+            Object.entries(formData).forEach(([key, value]) => {
+                if (key === 'managers') {
+                    formPayload.append(key, JSON.stringify(value));
+                } else if (value instanceof File) {
+                    formPayload.append(key, value);
+                } else {
+                    formPayload.append(key, value);
+                }
+            });
+        
+            // Add verification for PDFs
+            const pdfFields = [
+                'IDCardAttachment',
+                'KBORegisterExtract',
+                'OfficialGazettePublication',
+                'MoralityCertificate',
+                'LiabilityInsuranceCopy',
+                'CommercialLeaseAgreement',
+                'ElectricCertificate'
+            ];
+            
+            pdfFields.forEach(field => {
+                if (formData[field]) {
+                    formPayload.append(field, formData[field]);
+                }
+            });
+        
+            // Proper way to inspect FormData contents
+            console.log('Final Payload Data:');
+            for (const [key, value] of formPayload.entries()) {
+                console.log(key, value instanceof File ? value.name : value);
+            }
+        }  else {
             setActiveStep((prev) => prev + 1);
         }
         console.log(`Form data after Step ${activeStep + 1}:`, formData);
@@ -370,9 +694,9 @@ export default function MultiStepForm() {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleFileChange = (field, file) => {
-        setFormData((prev) => ({ ...prev, [field]: file }));
-    };
+    // const handleFileChange = (field, file) => {
+    //     setFormData((prev) => ({ ...prev, [field]: file }));
+    // };
 
     // const canProceed = () => {
     //     if (activeStep === 0) return formData.permission === true;
@@ -423,8 +747,70 @@ export default function MultiStepForm() {
                 return true;
             }
         }
-
+        if (activeStep === 3) {
+            // Check company details
+            const companyFields = [
+                'companyNumber', 'companyName', 'companyStreet',
+                'companyHouseNumber', 'companyPostalCode', 'companyCity'
+            ];
+            if (!companyFields.every(field => formData[field]?.trim())) return false;
+    
+            // Check business structure selection
+            if (!formData.businessStructure) return false;
+    
+            // Check managers if needed
+            if (formData.businessStructure !== 'sole') {
+                const managers = formData.managers || [];
+                if (managers.length === 0) return false;
+                
+                const requiredManagerFields = [
+                    'firstName', 'lastName', 'street', 'houseNumber',
+                    'postalCode', 'city', 'birthDate', 'country'
+                ];
+                
+                for (const manager of managers) {
+                    if (!requiredManagerFields.every(field => manager[field]?.trim())) {
+                        return false;
+                    }
+                }
+    
+                if (formData.businessStructure === 'single-manager' && managers.length !== 1) {
+                    return false;
+                }
+            }
+    
+            return true;
+        }
+        if (activeStep === 4) {
+            const requiredDocs = [
+                'IDCardAttachment',  // Changed from idCardAttachment
+                'KBORegisterExtract', // Changed from kboRegisterExtract
+                'OfficialGazettePublication', // Changed from officialGazettePublication
+                'MoralityCertificate', // Changed from moralityCertificate
+                'LiabilityInsuranceCopy', // Changed from liabilityInsuranceCopy
+                'CommercialLeaseAgreement', // Changed from commercialLeaseAgreement
+                'ElectricCertificate' // Changed from electricCertificate
+            ];
+        
+            return requiredDocs.every(doc => 
+                formData[doc] && 
+                formData[doc] instanceof File && 
+                formData[doc].type === 'application/pdf' &&
+                !formData[doc].error
+            );
+        }
+    
         return true;
+    };
+
+    const handleFileChange = (field, file) => {
+        setFormData(prev => {
+            // Clear previous error if valid file is selected
+            if (file && file.type === 'application/pdf') {
+                return { ...prev, [field]: file };
+            }
+            return { ...prev, [field]: file };
+        });
     };
 
 
@@ -444,7 +830,7 @@ export default function MultiStepForm() {
                         ))}
                     </Stepper>
 
-                    {getStepContent(activeStep,subStep, formData, handleChange, handleFileChange)}
+                    {getStepContent(activeStep, subStep, formData, handleChange, handleFileChange)}
 
                     <Box mt={4} display="flex" justifyContent="space-between">
                         <Button
@@ -458,10 +844,10 @@ export default function MultiStepForm() {
                         <Button
                             variant="contained"
                             onClick={handleNext}
-                            disabled={!canProceed() || activeStep === steps.length - 1}
+                            disabled={!canProceed() || activeStep === steps.length}
                             sx={{ bgcolor: '#00515D', '&:hover': { bgcolor: '#003941' } }}
                         >
-                            Volgende
+                            {activeStep === steps.length-1 ? "Rapport ophalen" : "Volgende"}
                         </Button>
                     </Box>
                 </Box>
