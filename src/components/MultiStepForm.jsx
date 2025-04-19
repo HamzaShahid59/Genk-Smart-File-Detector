@@ -18,6 +18,11 @@ import {
     FormControl,
     FormLabel
 } from '@mui/material';
+import axios from 'axios';
+import ValidationResults from './resultDialog'
+// Material UI Loader
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const theme = createTheme({
     palette: {
@@ -79,16 +84,16 @@ const FileUpload = ({ label, name, acceptedFileType, file, onFileChange, error }
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" 
-                         style={{ color: error ? '#ff0000' : '#00515D' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        style={{ color: error ? '#ff0000' : '#00515D' }}>
                         <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor" />
                     </svg>
                     <Typography variant="body1" sx={{ color: error ? '#ff0000' : '#00515D' }}>
                         {file?.name || `Upload ${label}`}
                     </Typography>
                     {file && !file.error && (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" 
-                             style={{ color: '#00C853', marginLeft: 8 }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            style={{ color: '#00C853', marginLeft: 8 }}>
                             <path d="M21 7L9 19L3.5 13.5L4.91 12.09L9 16.17L19.59 5.59L21 7Z" fill="currentColor" />
                         </svg>
                     )}
@@ -229,6 +234,15 @@ function getStepContent(step, subStep, formData, handleChange, handleFileChange)
                                         type="email"
                                         value={formData.email || ''}
                                         onChange={(e) => handleChange('email', e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid item size={{ xs: 12 }}>
+                                    <TextField
+                                        required
+                                        fullWidth
+                                        label="volledig bedrijfsadres"
+                                        value={formData.businessAddress || ''}
+                                        onChange={(e) => handleChange('businessAddress', e.target.value)}
                                     />
                                 </Grid>
                             </Grid>
@@ -427,7 +441,7 @@ function getStepContent(step, subStep, formData, handleChange, handleFileChange)
                                 ['Postcode maatschappelijke zetel', 'companyPostalCode'],
                                 ['Gemeente maatschappelijke zetel', 'companyCity'],
                             ].map(([label, name]) => (
-                                <Grid item size={{xs:12 , md : 6}} key={name}>
+                                <Grid item size={{ xs: 12, md: 6 }} key={name}>
                                     <TextField
                                         required
                                         fullWidth
@@ -467,7 +481,7 @@ function getStepContent(step, subStep, formData, handleChange, handleFileChange)
                                                 ['Gemeente', 'city'],
                                                 ['Land', 'country'],
                                             ].map(([label, field]) => (
-                                                <Grid item size={{xs:12 , md : 6}} key={field}>
+                                                <Grid item size={{ xs: 12, md: 6 }} key={field}>
                                                     <TextField
                                                         required
                                                         fullWidth
@@ -484,7 +498,7 @@ function getStepContent(step, subStep, formData, handleChange, handleFileChange)
                                                     />
                                                 </Grid>
                                             ))}
-                                            <Grid item size={{xs:12 , md : 6}}>
+                                            <Grid item size={{ xs: 12, md: 6 }}>
                                                 <TextField
                                                     required
                                                     fullWidth
@@ -546,73 +560,114 @@ function getStepContent(step, subStep, formData, handleChange, handleFileChange)
                     </Box>
                 </Container>
             );
-            case 4:
-                return (
-                    <Container maxWidth="lg">
-                        <Box sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: 2, mt: 2 }}>
-                            <Typography variant="h6" gutterBottom fontWeight="bold">
-                                Document(en) selecteren
-                            </Typography>
-            
-                            {[
-                                {
-                                    label: 'Bijlage Identiteitskaart',
-                                    name: 'idCard',
-                                    english: 'IDCardAttachment'
-                                },
-                                {
-                                    label: 'Uittreksel KBO',
-                                    name: 'kboExtract',
-                                    english: 'KBORegisterExtract'
-                                },
-                                {
-                                    label: 'Vennootschap: publicatie(s) Belgisch Staatsblad',
-                                    name: 'officialJournal',
-                                    english: 'OfficialGazettePublication'
-                                },
-                                {
-                                    label: 'Moraliteitsattest',
-                                    name: 'moralityCertificate',
-                                    english: 'MoralityCertificate'
-                                },
-                                {
-                                    label: 'Kopie verzekering Objectieve Aansprakelijkheid',
-                                    name: 'liabilityInsurance',
-                                    english: 'LiabilityInsuranceCopy'
-                                },
-                                {
-                                    label: 'Handelshuurovereenkomst (Indien je geen eigenaar bent)',
-                                    name: 'leaseAgreement',
-                                    english: 'CommercialLeaseAgreement'
-                                },
-                                {
-                                    label: 'Elektriciteitscertificaat',
-                                    name: 'electricCertificate',
-                                    english: 'ElectricCertificate'
-                                },
-                            ].map((doc) => (
-                                <Box key={doc.name} sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle1" gutterBottom>
-                                        {doc.label} <span style={{ color: '#ff0000' }}>*</span>
+        case 4:
+            return (
+                <Container maxWidth="lg">
+                    <Box sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: 2, mt: 2 }}>
+                        <Typography variant="h6" gutterBottom fontWeight="bold">
+                            Document(en) selecteren
+                        </Typography>
+
+                        {[
+                            {
+                                label: 'Bijlage Identiteitskaart',
+                                name: 'idCard',
+                                english: 'IDCardAttachment'
+                            },
+                            {
+                                label: 'Uittreksel KBO',
+                                name: 'kboExtract',
+                                english: 'KBORegisterExtract'
+                            },
+                            {
+                                label: 'Vennootschap: publicatie(s) Belgisch Staatsblad',
+                                name: 'officialJournal',
+                                english: 'OfficialGazettePublication'
+                            },
+                            {
+                                label: 'Moraliteitsattest',
+                                name: 'moralityCertificate',
+                                english: 'MoralityCertificate'
+                            },
+                            {
+                                label: 'Kopie verzekering Objectieve Aansprakelijkheid',
+                                name: 'liabilityInsurance',
+                                english: 'LiabilityInsuranceCopy'
+                            },
+                            {
+                                label: 'Handelshuurovereenkomst (Indien je geen eigenaar bent)',
+                                name: 'leaseAgreement',
+                                english: 'CommercialLeaseAgreement'
+                            },
+                            {
+                                label: 'Elektriciteitscertificaat',
+                                name: 'electricCertificate',
+                                english: 'ElectricCertificate'
+                            },
+                        ].map((doc) => (
+                            <Box key={doc.name} sx={{ mb: 3 }}>
+                                <Typography variant="subtitle1" gutterBottom>
+                                    {doc.label} <span style={{ color: '#ff0000' }}>*</span>
+                                </Typography>
+                                <FileUpload
+                                    label={doc.label}
+                                    name={doc.english}
+                                    acceptedFileType="application/pdf"
+                                    file={formData[doc.english]}
+                                    onFileChange={handleFileChange}
+                                    error={!!formData[doc.english]?.error}
+                                />
+                                {formData[doc.english]?.error && (
+                                    <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                                        Alleen PDF-bestanden zijn toegestaan
                                     </Typography>
-                                    <FileUpload 
-                                        label={doc.label}
-                                        name={doc.english}
-                                        acceptedFileType="application/pdf"
-                                        file={formData[doc.english]}
-                                        onFileChange={handleFileChange}
-                                        error={!!formData[doc.english]?.error}
-                                    />
-                                    {formData[doc.english]?.error && (
-                                        <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                                            Alleen PDF-bestanden zijn toegestaan
-                                        </Typography>
-                                    )}
-                                </Box>
-                            ))}
+                                )}
+                            </Box>
+                        ))}
+                    </Box>
+                </Container>
+            );
+        case 5:
+            return (
+                <Container maxWidth="md">
+                    <Box sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: 2, mt: 2 }}>
+                        <Typography variant="h6" gutterBottom fontWeight="bold">
+                            Bevestiging
+                        </Typography>
+
+                        <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+                            Gelieve te bevestigen dat alle ingevoerde informatie correct is.
+                            Door hieronder je volledige naam in te voeren, geef je aan dat je akkoord gaat met de juistheid van deze gegevens.
+                        </Typography>
+
+                        <Box sx={{ mt: 3 }}>
+                            <Typography variant="subtitle1" gutterBottom>
+                                Handtekening (volledige naam) <span style={{ color: '#ff0000' }}>*</span>
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                name="signature"
+                                value={formData.signature || ''}
+                                onChange={(e) => handleChange('signature', e.target.value)}
+                                error={
+                                    formData.signature &&
+                                    formData.signature.trim().toLowerCase() !== `${formData.firstName} ${formData.lastName}`.toLowerCase()
+
+                                }
+                                helperText={
+                                    formData.signature &&
+                                        formData.signature.trim().toLowerCase() !== `${formData.firstName} ${formData.lastName}`.toLowerCase()
+
+                                        ? 'De handtekening moet overeenkomen met de voornaam en achternaam.'
+                                        : ''
+                                }
+                            />
                         </Box>
-                    </Container>
-                );
+                    </Box>
+                </Container>
+            );
+
         default:
             return null;
     }
@@ -621,6 +676,9 @@ export default function MultiStepForm() {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState({});
     const [subStep, setSubStep] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    const [validatedData, setValidatedData] = useState({});
 
     // const handleNext = () => {
     //     if (!canProceed()) return;
@@ -637,22 +695,16 @@ export default function MultiStepForm() {
                 setActiveStep((prev) => prev + 1);
             }
         }
-        else if(activeStep === 5){
+        else if (activeStep === 5) {
             const formPayload = new FormData();
-            
-            // Append all form data
-            Object.entries(formData).forEach(([key, value]) => {
-                if (key === 'managers') {
-                    formPayload.append(key, JSON.stringify(value));
-                } else if (value instanceof File) {
-                    formPayload.append(key, value);
-                } else {
-                    formPayload.append(key, value);
-                }
-            });
-        
-            // Add verification for PDFs
-            const pdfFields = [
+
+            const allowedFields = [
+                'businessAddress',
+                'firstName',
+                'lastName',
+                'ownerName',
+                'companyNumber',
+                'companyName',
                 'IDCardAttachment',
                 'KBORegisterExtract',
                 'OfficialGazettePublication',
@@ -661,19 +713,45 @@ export default function MultiStepForm() {
                 'CommercialLeaseAgreement',
                 'ElectricCertificate'
             ];
-            
-            pdfFields.forEach(field => {
-                if (formData[field]) {
-                    formPayload.append(field, formData[field]);
+
+            if (formData.isOwner === 'owner') {
+                formData.ownerName = `${formData.firstName} ${formData.lastName}`;
+            }
+
+            allowedFields.forEach(field => {
+                const value = formData[field];
+                if (value !== undefined && value !== null) {
+                    formPayload.append(field, value);
                 }
             });
-        
-            // Proper way to inspect FormData contents
-            console.log('Final Payload Data:');
-            for (const [key, value] of formPayload.entries()) {
-                console.log(key, value instanceof File ? value.name : value);
-            }
-        }  else {
+
+            setLoading(true); // Start loader
+
+            axios.post(`${import.meta.env.VITE_API_BASE_URL}/validate-documents`, formPayload, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            })
+                .then((response) => {
+                    console.log('Response:', response.data);
+                    setValidatedData(response.data);
+                    // You can handle redirect or step forward here
+                })
+                .catch((error) => {
+                    console.error('Error during validation:', error);
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        setLoading(false); // Stop loader
+                        window.scrollTo({
+                            top: document.body.scrollHeight,
+                            behavior: 'smooth',
+                        });
+                    }, 1000);
+                });
+        }
+
+        else {
             setActiveStep((prev) => prev + 1);
         }
         console.log(`Form data after Step ${activeStep + 1}:`, formData);
@@ -726,7 +804,7 @@ export default function MultiStepForm() {
 
         if (activeStep === 2) {
             if (subStep === 0) {
-                const required = ['businessName', 'street', 'houseNumber', 'email'];
+                const required = ['businessName', 'street', 'houseNumber', 'email', 'businessAddress'];
                 return required.every((field) => !!formData[field]?.trim());
             }
             else {
@@ -754,31 +832,31 @@ export default function MultiStepForm() {
                 'companyHouseNumber', 'companyPostalCode', 'companyCity'
             ];
             if (!companyFields.every(field => formData[field]?.trim())) return false;
-    
+
             // Check business structure selection
             if (!formData.businessStructure) return false;
-    
+
             // Check managers if needed
             if (formData.businessStructure !== 'sole') {
                 const managers = formData.managers || [];
                 if (managers.length === 0) return false;
-                
+
                 const requiredManagerFields = [
                     'firstName', 'lastName', 'street', 'houseNumber',
                     'postalCode', 'city', 'birthDate', 'country'
                 ];
-                
+
                 for (const manager of managers) {
                     if (!requiredManagerFields.every(field => manager[field]?.trim())) {
                         return false;
                     }
                 }
-    
+
                 if (formData.businessStructure === 'single-manager' && managers.length !== 1) {
                     return false;
                 }
             }
-    
+
             return true;
         }
         if (activeStep === 4) {
@@ -791,15 +869,19 @@ export default function MultiStepForm() {
                 'CommercialLeaseAgreement', // Changed from commercialLeaseAgreement
                 'ElectricCertificate' // Changed from electricCertificate
             ];
-        
-            return requiredDocs.every(doc => 
-                formData[doc] && 
-                formData[doc] instanceof File && 
+
+            return requiredDocs.every(doc =>
+                formData[doc] &&
+                formData[doc] instanceof File &&
                 formData[doc].type === 'application/pdf' &&
                 !formData[doc].error
             );
         }
-    
+        if (activeStep === 5) {
+            const fullName = `${formData.firstName} ${formData.lastName}`.toLowerCase();
+            return formData.signature && formData.signature.trim().toLowerCase() === fullName;
+        }
+
         return true;
     };
 
@@ -816,7 +898,7 @@ export default function MultiStepForm() {
 
     return (
         <ThemeProvider theme={theme}>
-            <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh' }}>
+            <Container maxWidth="lg" sx={{ py: 1 }}>
                 <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 1, sm: 3 } }}>
                     <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
                         {steps.map((label) => (
@@ -831,6 +913,13 @@ export default function MultiStepForm() {
                     </Stepper>
 
                     {getStepContent(activeStep, subStep, formData, handleChange, handleFileChange)}
+                    <Backdrop
+                        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                        open={loading}
+                    >
+                        <CircularProgress color="inherit" />
+                    </Backdrop>
+
 
                     <Box mt={4} display="flex" justifyContent="space-between">
                         <Button
@@ -847,9 +936,15 @@ export default function MultiStepForm() {
                             disabled={!canProceed() || activeStep === steps.length}
                             sx={{ bgcolor: '#00515D', '&:hover': { bgcolor: '#003941' } }}
                         >
-                            {activeStep === steps.length-1 ? "Rapport ophalen" : "Volgende"}
+                            {activeStep === steps.length - 1 ? "Rapport ophalen" : "Volgende"}
                         </Button>
                     </Box>
+                    {
+                        activeStep == 5 &&
+                        Object.keys(validatedData || {}).length > 0 && (
+                            <ValidationResults result={validatedData} />
+                        )
+                    }
                 </Box>
             </Container>
         </ThemeProvider>
