@@ -23,31 +23,33 @@ const documentTitles = {
 
 // Validation key to Dutch message mapping
 const validationMessages = {
-    // ID Card
-    name_match: "Naam komt niet overeen met aanvrager",
-    expiry_valid: "ID kaart is verlopen",
-    
-    // KBO Register
-    company_name_match: "Bedrijfsnaam komt niet overeen",
-    company_number_match: "Ondernemingsnummer klopt niet",
-    manager_name_match: "Beheerder naam komt niet overeen",
-    
-    // Morality Certificate
-    name_valid: "Naam op certificaat klopt niet",
-    date_valid: "Certificaat van goed zeden is verlopen",
-    
-    // Commercial Lease
-    building_owner_match: "Eigenaar pand komt niet overeen",
-    restaurant_address_match: "Adres restaurant klopt niet",
-    
-    // Liability Insurance
-    company_name_match: "Verzekeringsmaatschappij naam klopt niet",
-    expiry_valid: "Verzekering is verlopen",
-    
-    // Electric Certificate
-    conformity_statement_found: "Conformiteitsverklaring niet gevonden",
-    address_match: "Adres op certificaat klopt niet"
+    IDCardAttachment: {
+        name_match: "Naam komt niet overeen met aanvrager",
+        expiry_valid: "ID kaart is verlopen"
+    },
+    KBORegisterExtract: {
+        company_name_match: "Bedrijfsnaam komt niet overeen",
+        company_number_match: "Ondernemingsnummer klopt niet",
+        manager_name_match: "Beheerder naam komt niet overeen"
+    },
+    MoralityCertificate: {
+        name_valid: "Naam op certificaat klopt niet",
+        date_valid: "Certificaat van goed zeden is verlopen"
+    },
+    CommercialLeaseAgreement: {
+        building_owner_match: "Eigenaar pand komt niet overeen",
+        restaurant_address_match: "Adres restaurant klopt niet"
+    },
+    LiabilityInsuranceCopy: {
+        company_name_match: "Verzekeringsmaatschappij naam klopt niet",
+        expiry_valid: "Verzekering is verlopen"
+    },
+    ElectricCertificate: {
+        conformity_statement_found: "Conformiteitsverklaring niet gevonden",
+        address_match: "Adres op certificaat klopt niet"
+    }
 };
+
 
 // Mapping from PDF check keys to validation result keys
 const validationKeys = {
@@ -89,13 +91,16 @@ const getValidationMessages = (docType, validations) => {
 
     Object.entries(validations).forEach(([key, value]) => {
         if (value === false) {
-            const message = validationMessages[key] || `Onbekend probleem: ${key}`;
+            const message =
+                (validationMessages[docType] && validationMessages[docType][key]) ||
+                `Onbekend probleem: ${key}`;
             messages.push(expirationFields.includes(key) ? `Vervallen: ${message}` : message);
         }
     });
 
     return messages.length > 0 ? messages : ['geldig'];
 };
+
 
 const ValidationResults = ({ result }) => {
     const { pdf_checks, ...restValidations } = result;
