@@ -81,7 +81,7 @@ const getCircleColor = (docType, validations) => {
 };
 
 // Get validation messages for tooltip and display
-const getValidationMessages = (docType, validations) => {
+const getValidationMessages = (docKey, docType, validations) => {
     if (docType === 'image' && Object.keys(validations).length === 0) {
         return ['Onleesbaar document'];
     }
@@ -91,9 +91,23 @@ const getValidationMessages = (docType, validations) => {
 
     Object.entries(validations).forEach(([key, value]) => {
         if (value === false) {
-            const message =
-                (validationMessages[docType] && validationMessages[docType][key]) ||
-                `Onbekend probleem: ${key}`;
+            let message;
+
+            // Special handling for shared keys
+            if (key === 'expiry_valid') {
+                if (docKey === 'IDCardAttachment') {
+                    message = 'ID kaart is verlopen';
+                } else if (docKey === 'LiabilityInsuranceCopy') {
+                    message = 'Verzekering is verlopen';
+                } else {
+                    message = 'Document is verlopen';
+                }
+            } else if (key === 'date_valid' && docKey === 'MoralityCertificate') {
+                message = 'Certificaat van goed zeden is verlopen';
+            } else {
+                message = validationMessages[key] || `Onbekend probleem: ${key}`;
+            }
+
             messages.push(expirationFields.includes(key) ? `Vervallen: ${message}` : message);
         }
     });
